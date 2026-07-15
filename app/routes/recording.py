@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Header, Request
 from fastapi.responses import FileResponse
 
 from app.schemas.recording import RecordingStartRequest, RecordingStopRequest, UploadRecordingRequest
@@ -100,7 +100,7 @@ def get_recording_audio(id_recordings: int):
 
 
 @router.post("/latest/{user_id}/upload")
-async def upload_latest_recording(user_id: int):
+async def upload_latest_recording(user_id: int, authorization: str | None = Header(default=None)):
     found = metadata_service.find_latest_by_user(user_id)
     if found is None:
         return {
@@ -109,11 +109,15 @@ async def upload_latest_recording(user_id: int):
             "user_id": user_id,
         }
     path, metadata = found
-    return await remote_upload_service.upload(path, metadata)
+    return await remote_upload_service.upload(path, metadata, authorization=authorization)
 
 
 @router.post("/{id_recordings}/upload")
-async def upload_recording(id_recordings: int, request: UploadRecordingRequest | None = None):
+async def upload_recording(
+    id_recordings: int,
+    request: UploadRecordingRequest | None = None,
+    authorization: str | None = Header(default=None),
+):
     found = metadata_service.find_by_id_recordings(id_recordings)
     if found is None:
         return {
@@ -129,7 +133,7 @@ async def upload_recording(id_recordings: int, request: UploadRecordingRequest |
             "user_id": request.user_id,
             "id_recordings": id_recordings,
         }
-    return await remote_upload_service.upload(path, metadata)
+    return await remote_upload_service.upload(path, metadata, authorization=authorization)
 
 
 def _response_metadata(metadata: dict):
@@ -137,4 +141,3 @@ def _response_metadata(metadata: dict):
     if isinstance(response.get("duration"), float):
         response["duration"] = round(response["duration"], 2)
     return response
-

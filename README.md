@@ -77,6 +77,23 @@ http://127.0.0.1:8765
 7. Reproduza o WAV com `GET /api/recordings/latest/{user_id}/audio`.
 8. Envie para a API remota com `POST /api/recordings/latest/{user_id}/upload`.
 
+Nos endpoints de upload, envie o mesmo token recebido/usado pelo front:
+
+```http
+POST /api/recordings/latest/{user_id}/upload
+Authorization: Bearer SEU_TOKEN
+```
+
+A API local repassa esse header para:
+
+```http
+POST https://akcitapi.duckdns.org/api/v1/recordings
+Authorization: Bearer SEU_TOKEN
+Content-Type: multipart/form-data
+```
+
+O token não é salvo no JSON local da gravação.
+
 Os arquivos são salvos em:
 
 ```text

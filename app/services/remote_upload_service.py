@@ -28,7 +28,12 @@ REMOTE_METADATA_FIELDS = (
 
 
 class RemoteUploadService:
-    async def upload(self, metadata_path: Path, metadata: dict[str, Any]) -> dict[str, Any]:
+    async def upload(
+        self,
+        metadata_path: Path,
+        metadata: dict[str, Any],
+        authorization: str | None = None,
+    ) -> dict[str, Any]:
         user_id = int(metadata["user_id"])
         session_id = int(metadata["session_id"])
         id_recordings = int(metadata["id_recordings"])
@@ -45,6 +50,7 @@ class RemoteUploadService:
         metadata_service.save_metadata(metadata)
 
         data = self._remote_data(metadata)
+        headers = self._remote_headers(authorization)
         try:
             with wav.open("rb") as audio_file:
                 files = {"file": (wav.name, audio_file, "audio/wav")}
@@ -53,6 +59,7 @@ class RemoteUploadService:
                         REMOTE_RECORDINGS_URL,
                         data=data,
                         files=files,
+                        headers=headers,
                         timeout=60,
                     )
         except Exception as exc:
@@ -121,6 +128,11 @@ class RemoteUploadService:
             else:
                 data[field] = str(value)
         return data
+
+    def _remote_headers(self, authorization: str | None) -> dict[str, str]:
+        if not authorization:
+            return {}
+        return {"Authorization": authorization}
 
     def _recording_summary(self, metadata: dict[str, Any]) -> dict[str, Any]:
         return {
