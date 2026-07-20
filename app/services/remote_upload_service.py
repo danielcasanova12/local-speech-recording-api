@@ -10,7 +10,6 @@ from app.services.time_utils import utc_now_iso
 
 
 REMOTE_METADATA_FIELDS = (
-    "id_recordings",
     "session_id",
     "dataset_id",
     "bloco_id",
@@ -22,7 +21,6 @@ REMOTE_METADATA_FIELDS = (
     "frase_content",
     "room_tone_start",
     "room_tone_end",
-    "created_at",
     "extra_info",
 )
 
@@ -34,7 +32,7 @@ class RemoteUploadService:
         metadata: dict[str, Any],
         authorization: str | None = None,
     ) -> dict[str, Any]:
-        user_id = int(metadata["user_id"])
+        user_id = str(metadata["user_id"])
         session_id = int(metadata["session_id"])
         id_recordings = int(metadata["id_recordings"])
         wav = metadata_service.wav_path(user_id, session_id, id_recordings)
@@ -53,7 +51,7 @@ class RemoteUploadService:
         headers = self._remote_headers(authorization)
         try:
             with wav.open("rb") as audio_file:
-                files = {"file": (wav.name, audio_file, "audio/wav")}
+                files = {"audio_file": (wav.name, audio_file, "audio/wav")}
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
                         REMOTE_RECORDINGS_URL,
@@ -120,7 +118,7 @@ class RemoteUploadService:
         for field in REMOTE_METADATA_FIELDS:
             value = metadata.get(field)
             if value is None:
-                data[field] = ""
+                continue
             elif isinstance(value, bool):
                 data[field] = str(value).lower()
             elif isinstance(value, (dict, list)):

@@ -63,7 +63,7 @@ start_api.bat
 A API ficará disponível em:
 
 ```text
-http://127.0.0.1:8765
+http://127.0.0.1:9000
 ```
 
 ## Fluxo básico
@@ -79,10 +79,18 @@ http://127.0.0.1:8765
 
 Nos endpoints de upload, envie o mesmo token recebido/usado pelo front:
 
-```http
-POST /api/recordings/latest/{user_id}/upload
-Authorization: Bearer SEU_TOKEN
+```bash
+curl -X POST "http://localhost:9000/api/recordings/1784551800469/upload" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"eeb16762-def1-45fc-aac6-e71c779b5ad3"}'
 ```
+
+O `user_id` é um UUID e, por isso, precisa estar entre aspas no JSON. No upload
+por `id_recordings`, o corpo é opcional; quando enviado, ele é usado para conferir
+o proprietário da gravação. O header `Authorization` é obrigatório para o envio à
+API remota.
 
 A API local repassa esse header para:
 
@@ -91,6 +99,9 @@ POST https://akcitapi.duckdns.org/api/v1/recordings
 Authorization: Bearer SEU_TOKEN
 Content-Type: multipart/form-data
 ```
+
+O arquivo WAV é enviado no campo multipart `audio_file`, conforme o contrato da
+API remota.
 
 O token não é salvo no JSON local da gravação.
 

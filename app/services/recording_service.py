@@ -61,7 +61,7 @@ class RecordingService:
             )
             target_wav.parent.mkdir(parents=True, exist_ok=True)
 
-            metadata = request.model_dump()
+            metadata = request.model_dump(mode="json")
             metadata.update(
                 {
                     "duration": None,
@@ -129,17 +129,21 @@ class RecordingService:
             if self._active is None:
                 return {"success": False, "message": "Não existe gravação em andamento."}
 
-            for field in ("user_id", "id_recordings", "session_id"):
-                if int(getattr(request, field)) != int(self._active[field]):
-                    return {
-                        "success": False,
-                        "message": "A gravação ativa pertence a outro usuário, sessão ou id_recordings.",
-                        "active_recording": {
-                            "user_id": self._active["user_id"],
-                            "id_recordings": self._active["id_recordings"],
-                            "session_id": self._active["session_id"],
-                        },
-                    }
+            fields_match = (
+                str(request.user_id) == str(self._active["user_id"])
+                and request.id_recordings == int(self._active["id_recordings"])
+                and request.session_id == int(self._active["session_id"])
+            )
+            if not fields_match:
+                return {
+                    "success": False,
+                    "message": "A gravação ativa pertence a outro usuário, sessão ou id_recordings.",
+                    "active_recording": {
+                        "user_id": self._active["user_id"],
+                        "id_recordings": self._active["id_recordings"],
+                        "session_id": self._active["session_id"],
+                    },
+                }
 
             stream = self._stream
             sound_file = self._sound_file

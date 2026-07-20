@@ -1,25 +1,29 @@
 import json
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from app.config import RECORDINGS_DIR
 
 
-def recording_dir(user_id: int, session_id: int) -> Path:
+UserId = str | UUID | int
+
+
+def recording_dir(user_id: UserId, session_id: int) -> Path:
     return RECORDINGS_DIR / str(user_id) / f"session_{session_id}"
 
 
-def wav_path(user_id: int, session_id: int, id_recordings: int) -> Path:
+def wav_path(user_id: UserId, session_id: int, id_recordings: int) -> Path:
     return recording_dir(user_id, session_id) / f"recording_{id_recordings}.wav"
 
 
-def json_path(user_id: int, session_id: int, id_recordings: int) -> Path:
+def json_path(user_id: UserId, session_id: int, id_recordings: int) -> Path:
     return recording_dir(user_id, session_id) / f"recording_{id_recordings}.json"
 
 
 def save_metadata(metadata: dict[str, Any]) -> Path:
     path = json_path(
-        int(metadata["user_id"]),
+        str(metadata["user_id"]),
         int(metadata["session_id"]),
         int(metadata["id_recordings"]),
     )
@@ -54,17 +58,18 @@ def id_recordings_exists(id_recordings: int) -> bool:
     return any(RECORDINGS_DIR.rglob(f"recording_{id_recordings}.wav"))
 
 
-def find_latest_by_user(user_id: int) -> tuple[Path, dict[str, Any]] | None:
-    user_dir = RECORDINGS_DIR / str(user_id)
+def find_latest_by_user(user_id: UserId) -> tuple[Path, dict[str, Any]] | None:
+    normalized_user_id = str(user_id)
+    user_dir = RECORDINGS_DIR / normalized_user_id
     if not user_dir.exists():
         return None
 
     candidates: list[tuple[float, Path, dict[str, Any]]] = []
     for path in user_dir.rglob("recording_*.json"):
         metadata = load_metadata(path)
-        if int(metadata.get("user_id", -1)) != user_id:
+        if str(metadata.get("user_id", "")) != normalized_user_id:
             continue
-        wav = wav_path(user_id, int(metadata["session_id"]), int(metadata["id_recordings"]))
+        wav = wav_path(normalized_user_id, int(metadata["session_id"]), int(metadata["id_recordings"]))
         timestamp = wav.stat().st_mtime if wav.exists() else path.stat().st_mtime
         candidates.append((timestamp, path, metadata))
 
@@ -72,4 +77,3 @@ def find_latest_by_user(user_id: int) -> tuple[Path, dict[str, Any]] | None:
         return None
     _, path, metadata = max(candidates, key=lambda item: item[0])
     return path, metadata
-

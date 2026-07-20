@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -6,7 +7,7 @@ from app.config import FORMAT, SAMPLE_RATE
 
 
 class RecordingStartRequest(BaseModel):
-    user_id: int = Field(..., gt=0)
+    user_id: UUID
     id_recordings: int = Field(..., gt=0)
     session_id: int = Field(..., gt=0)
     dataset_id: int
@@ -42,11 +43,10 @@ class RecordingStartRequest(BaseModel):
 
 
 class RecordingStopRequest(BaseModel):
-    user_id: int = Field(..., gt=0)
+    user_id: UUID
     id_recordings: int = Field(..., gt=0)
     session_id: int = Field(..., gt=0)
 
 
 class UploadRecordingRequest(BaseModel):
-    user_id: int | None = Field(default=None, gt=0)
-
+    user_id: UUID | None = None
